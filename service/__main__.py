@@ -4,10 +4,9 @@ import httpx # для запроса
 import random # для рандомизации временного интервала
 import time # для задержки между запросами
 
-from vkapp.config import access_token, owner_id # настройки для запроса
+from service.config import access_token, owner_id # настройки для запроса
 from datetime import datetime as dt # для перевода даты из timestamp
 from glom import glom # для безопасного получения значений словаря
-
 
 
 def getjson(url, data=None):
