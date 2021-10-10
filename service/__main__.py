@@ -8,6 +8,8 @@ from service.config import access_token, owner_id # настройки для з
 from datetime import datetime as dt # для перевода даты из timestamp
 from glom import glom # для безопасного получения значений словаря
 
+import arrow # для работы с датами
+
 
 def getjson(url, data=None):
     response = httpx.get(url, params=data)
@@ -37,8 +39,50 @@ def get_all_posts(access_token, owner_id, count=100, offset=0):
             break
         else:
             offset += 100
-
+    
     return all_posts, count_posts
+
+
+def get_all_posts2(access_token, owner_id, count=5, offset=0):
+    """takes access_token, owner_id (group_id), count(default=100), offset(default=0)
+    and returns all posts from vk group in a list of dictionaries
+    and the number of posts in second variable"""
+    
+    all_posts = []
+    
+        
+    wall = getjson("https://api.vk.com/method/wall.get", {
+            "owner_id" : owner_id,
+            "count": count,
+            "access_token": access_token,
+            "offset": offset,
+            "v": '5.131'
+        })
+    count_posts = wall['response']['count']
+    posts = wall['response']['items']
+
+    all_posts.extend(posts)
+
+
+    
+    return all_posts, count_posts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def make_posts(all_posts):
@@ -96,5 +140,18 @@ def make_posts(all_posts):
 
 if __name__ == "__main__":
 
-    all_posts, count_posts = get_all_posts(access_token, owner_id, count=100, offset=0)
+    all_posts, count_posts = get_all_posts2(access_token, owner_id, count=2, offset=0)
     print(all_posts)
+    print('----------------------------------------------------------------------')
+    date = all_posts[0]['date']
+    date2 = all_posts[1]['date']
+    formatted_date = arrow.get(date)
+    formatted_date2 = arrow.get(date2)
+   
+    if formatted_date > formatted_date2:
+        print(f"date {formatted_date} is greater that {formatted_date2}")
+    elif formatted_date < formatted_date2:
+        print(f"date {formatted_date} is lower than {formatted_date2}")
+    else:
+        print(f"dates {formatted_date} and {formatted_date2} are equal") 
+      
