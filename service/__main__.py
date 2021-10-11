@@ -1,6 +1,6 @@
 
+import arrow # для работы с датами
 import httpx # для запроса
-
 import random # для рандомизации временного интервала
 import time # для задержки между запросами
 
@@ -13,35 +13,8 @@ def getjson(url, data=None):
     response = httpx.get(url, params=data)
     return response.json()
 
-def get_all_posts(access_token, owner_id, count=100, offset=0):
-    """takes access_token, owner_id (group_id), count(default=100), offset(default=0)
-    and returns all posts from vk group in a list of dictionaries
-    and the number of posts in second variable"""
-    
-    all_posts = []
-    while True:
-        time.sleep(random.random())
-        wall = getjson("https://api.vk.com/method/wall.get", {
-            "owner_id" : owner_id,
-            "count": count,
-            "access_token": access_token,
-            "offset": offset,
-            "v": '5.131'
-        })
-        count_posts = wall['response']['count']
-        posts = wall['response']['items']
 
-        all_posts.extend(posts)
-
-        if len(all_posts) >= count_posts:
-            break
-        else:
-            offset += 100
-
-    return all_posts, count_posts
-
-
-def make_posts(all_posts):
+def save_post(all_posts):
     """Takes in a list of dictionaries with posts, converts the data
     in a new structure, returns a new list of dictionaries with the posts"""
     filtered_data = []
@@ -94,7 +67,52 @@ def make_posts(all_posts):
     
     return filtered_data
 
+
+
+def get_new_post(access_token, owner_id, count=1, offset=0):
+    """takes access_token, owner_id (group_id), count(default=1), offset(default=0)
+    and returns one fresh post from vk group in a dictionary"""
+  
+    wall = getjson("https://api.vk.com/method/wall.get", {
+            "owner_id" : owner_id,
+            "count": count,
+            "access_token": access_token,
+            "offset": offset,
+            "v": '5.131'
+        })
+   
+    post = wall['response']['items']
+
+    return post
+
+
 if __name__ == "__main__":
 
-    all_posts, count_posts = get_all_posts(access_token, owner_id, count=100, offset=0)
-    print(all_posts)
+    time_delay = random.randrange(60, 360)
+    last_post = get_new_post(access_token, owner_id, count=1, offset=0)
+    last_post_date = last_post[0]['date']
+    formatted_last_post_date = arrow.get(last_post_date)
+    current_message = last_post[0]['text']
+    saved_posts = save_post(last_post)
+
+    print(formatted_last_post_date)
+    print(current_message)
+    print(saved_posts)
+
+    while True:
+        time.sleep(time_delay)
+        new_post = get_new_post(access_token, owner_id, count=1, offset=0)
+        new_post_date = new_post[0]['date']
+        formatted_new_post_date = arrow.get(new_post_date)
+        if formatted_new_post_date > formatted_last_post_date:
+            current_message = new_post[0]['text']
+            saved_posts.extend(save_post(new_post))
+            formatted_last_post_date = formatted_new_post_date
+            print(current_message)
+            print(formatted_last_post_date)
+            print(saved_posts)
+
+            
+        else:
+            print("There are no new messages")
+            continue
