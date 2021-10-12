@@ -1,4 +1,4 @@
-
+from copy import error
 import arrow # для работы с датами
 import httpx # для запроса
 import random # для рандомизации временного интервала
@@ -86,6 +86,15 @@ def get_new_post(access_token, owner_id, count=1, offset=0):
     return post
 
 
+def send_publication(publication):
+    payload = {'text': publication}
+    try:
+        httpx.post('http://127.0.0.1:5001/api/v1/emotions', json = payload)
+        print('new message have been sent to the recognizer')
+    except (ConnectionError, ConnectionAbortedError, ConnectionRefusedError):
+        print('can\'t send message due to connection problem')
+
+
 if __name__ == "__main__":
 
     time_delay = random.randrange(60, 360)
@@ -94,10 +103,7 @@ if __name__ == "__main__":
     formatted_last_post_date = arrow.get(last_post_date)
     current_message = last_post[0]['text']
     saved_posts = save_post(last_post)
-
-    print(formatted_last_post_date)
-    print(current_message)
-    print(saved_posts)
+    send_publication(current_message)
 
     while True:
         time.sleep(time_delay)
@@ -108,10 +114,7 @@ if __name__ == "__main__":
             current_message = new_post[0]['text']
             saved_posts.extend(save_post(new_post))
             formatted_last_post_date = formatted_new_post_date
-            print(current_message)
-            print(formatted_last_post_date)
-            print(saved_posts)
-
+            send_publication(current_message)
             
         else:
             print("There are no new messages")
