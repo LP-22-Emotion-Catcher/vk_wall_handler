@@ -11,7 +11,6 @@ httpx = "^0.19.0"
 arrow = "^1.2.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
 mypy = "^0.910"
 flake8 = "^4.0.1"
 
