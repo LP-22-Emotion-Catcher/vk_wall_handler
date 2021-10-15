@@ -1,10 +1,17 @@
-import arrow  # для работы с датами
-import httpx  # для запроса
-import random  # для рандомизации временного интервала
-import time  # для задержки между запросами
+import logging
+import random
+import time
+from dataclasses import dataclass
+from typing import Any
 
-from service.config import access_token, owner_id, backend_url  # настройки для запроса
-from glom import glom  # для безопасного получения значений словаря
+import arrow
+import httpx
+import orjson
+from glom import glom
+
+from service.config import access_token, backend_url, owner_id
+
+logger = logging.getLogger(__name__)
 
 
 def getjson(url, data=None):
@@ -12,58 +19,33 @@ def getjson(url, data=None):
     return response.json()
 
 
-def save_post(all_posts):
-    """Takes in a list of dictionaries with posts, converts the data
-    in a new structure, returns a new list of dictionaries with the posts"""
-    filtered_data = []
-    for post in all_posts:
-        try:
-            link = 'https://vk.com/wall-{owner_id}_{id}'.format(
-                owner_id=owner_id[1:],
-                id=id
-                )
-        except:
-            link = ''
+@dataclass
+class Post:
+    uid: int
+    link: str
+    author_id: int
+    text: str
+    created: arrow.Arrow
+    likes: int
+    reposts: int
+    comments: int
+    views: int
 
-        date = glom(post, 'date', default=None)
-        if date:
-            cute_date = arrow.get(post['date']).to('local').format('DD-MM-YYYY HH:mm:ss')
 
-        post_id = glom(post, 'id', default=None)
-        author_id = glom(post, 'from_id', default=None)
-        likes = glom(post, 'likes.count', default=None)
-        reposts = glom(post, 'reposts.count', default=None)
-        comments = glom(post, 'comments.count', default=None)
-        views = glom(post, 'views.count', default=None)
-        text = glom(post, 'text', default=None)
-        all_attachments = []
-        try:
-            attachments = post['attachments']
-            if attachments:
-                for att in attachments:
-                    if att['type'] == 'video':
-                        video_title = att['video']['title']
-                        all_attachments.append(video_title)
-                    if att['type'] == 'photo':
-                        photo = att['photo']['text']
-                        all_attachments.append(photo)
-        except:
-            attachments = ''
+def convert(post: dict[str, Any], owner_id: str) -> Post:
+    post_id = glom(post, 'id', default=None)
 
-        filtered_post = {
-            'post_id': post_id,
-            'author_id': author_id,
-            'date': cute_date,
-            'likes': likes,
-            'reposts': reposts,
-            'comments': comments,
-            'views': views,
-            'text': text,
-            'attachments': all_attachments,
-            'link': link,
-        }
-        filtered_data.append(filtered_post)
-    return filtered_data
+    return Post(
+        uid=int(post_id),
+        created=arrow.get(post['date']),
+        author_id=post['from_id'],
+        link=f'https://vk.com/wall-{owner_id}_{post_id}',
+        likes=glom(post, 'likes.count', default=0),
+        reposts=glom(post, 'reposts.count', default=0),
+        comments=glom(post, 'comments.count', default=0),
+        views=glom(post, 'views.count', default=0),
+        text=glom(post, 'text', default=None),
+    )
 
 
 def get_new_post(access_token, owner_id, count=1, offset=0):
@@ -81,10 +63,9 @@ def get_new_post(access_token, owner_id, count=1, offset=0):
     return post
 
 
-def send_post(post):
-    payload = post[0]
+def send_post(post: Post):
     try:
-        httpx.post(backend_url, json=payload)
+        httpx.post(backend_url, json=orjson.dumps(post))
         print('new message have been sent to backend')
     except httpx.ConnectError:
         print('can\'t send message due to connection problem')
@@ -97,7 +78,7 @@ if __name__ == "__main__":
     last_post_date = last_post[0]['date']
     formatted_last_post_date = arrow.get(last_post_date)
     current_message = last_post[0]['text']
-    saved_post = save_post(last_post)
+    saved_post = convert(last_post, owner_id)
     send_post(saved_post)
 
     while True:
@@ -107,7 +88,7 @@ if __name__ == "__main__":
         formatted_new_post_date = arrow.get(new_post_date)
         if formatted_new_post_date > formatted_last_post_date:
             current_message = new_post[0]['text']
-            saved_post = save_post(last_post)
+            saved_post = convert(last_post, owner_id)
             formatted_last_post_date = formatted_new_post_date
             send_post(saved_post)
         else:
