@@ -1,12 +1,11 @@
-from copy import error
-import arrow # для работы с датами
-import httpx # для запроса
-import random # для рандомизации временного интервала
-import time # для задержки между запросами
+import arrow  # для работы с датами
+import httpx  # для запроса
+import random  # для рандомизации временного интервала
+import time  # для задержки между запросами
 
-from service.config import access_token, owner_id # настройки для запроса
-from datetime import datetime as dt # для перевода даты из timestamp
-from glom import glom # для безопасного получения значений словаря
+from service.config import access_token, owner_id, backend_url  # настройки для запроса
+from datetime import datetime as dt  # для перевода даты из timestamp
+from glom import glom  # для безопасного получения значений словаря
 
 
 def getjson(url, data=None):
@@ -20,7 +19,10 @@ def save_post(all_posts):
     filtered_data = []
     for post in all_posts:
         try:
-            link = 'https://vk.com/wall-{owner_id}_{id}'.format(owner_id=owner_id[1:], id=id)
+            link = 'https://vk.com/wall-{owner_id}_{id}'.format(
+                owner_id=owner_id[1:],
+                id=id
+                )
         except:
             link = ''
         try:
@@ -28,15 +30,14 @@ def save_post(all_posts):
         except:
             date = ''
         
-        id_ = glom(post,'id',default=None)
-        timestamp = glom(post,'date',default=None)
+        post_id = glom(post, 'id', default=None)
+        author_id = glom(post, 'from_id', default=None)
+        timestamp = glom(post, 'date', default=None)
         likes = glom(post, 'likes.count', default=None)
         reposts = glom(post, 'reposts.count', default=None)
         comments = glom(post, 'comments.count', default=None)
         views = glom(post, 'views.count', default=None)
         text = glom(post, 'text', default=None)
-        
-
         all_attachments = []
         try:
             attachments = post['attachments']
@@ -52,7 +53,8 @@ def save_post(all_posts):
             attachments = ''
 
         filtered_post = {
-            'id': id_,
+            'post_id': post_id,
+            'author_id': author_id,
             'date': date,
             'timestamp': timestamp,
             'likes': likes,
@@ -64,34 +66,30 @@ def save_post(all_posts):
             'link': link,
         }
         filtered_data.append(filtered_post)
-    
     return filtered_data
-
 
 
 def get_new_post(access_token, owner_id, count=1, offset=0):
     """takes access_token, owner_id (group_id), count(default=1), offset(default=0)
     and returns one fresh post from vk group in a dictionary"""
-  
     wall = getjson("https://api.vk.com/method/wall.get", {
-            "owner_id" : owner_id,
+            "owner_id": owner_id,
             "count": count,
             "access_token": access_token,
             "offset": offset,
             "v": '5.131'
         })
-   
     post = wall['response']['items']
 
     return post
 
 
-def send_publication(publication):
-    payload = {'text': publication}
+def send_post(post):
+    payload = post[0]
     try:
-        httpx.post('http://127.0.0.1:5001/api/v1/emotions', json = payload)
-        print('new message have been sent to the recognizer')
-    except (ConnectionError, ConnectionAbortedError, ConnectionRefusedError):
+        httpx.post(backend_url, json=payload)
+        print('new message have been sent to backend')
+    except httpx.ConnectError:
         print('can\'t send message due to connection problem')
 
 
@@ -102,8 +100,8 @@ if __name__ == "__main__":
     last_post_date = last_post[0]['date']
     formatted_last_post_date = arrow.get(last_post_date)
     current_message = last_post[0]['text']
-    saved_posts = save_post(last_post)
-    send_publication(current_message)
+    saved_post = save_post(last_post)
+    send_post(saved_post)
 
     while True:
         time.sleep(time_delay)
@@ -112,10 +110,9 @@ if __name__ == "__main__":
         formatted_new_post_date = arrow.get(new_post_date)
         if formatted_new_post_date > formatted_last_post_date:
             current_message = new_post[0]['text']
-            saved_posts.extend(save_post(new_post))
+            saved_post = save_post(last_post)
             formatted_last_post_date = formatted_new_post_date
-            send_publication(current_message)
-            
+            send_post(saved_post)
         else:
             print("There are no new messages")
             continue
