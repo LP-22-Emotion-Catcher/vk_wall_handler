@@ -1,4 +1,4 @@
-from service.clients.vkclient.vkclient import VKClient
+from service.clients.vkclient.client import VKClient
 from service.clients.vkclient.serializers import Post
 
 

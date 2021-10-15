@@ -1,4 +1,4 @@
-import arrow
+from datetime import datetime
 
 from dataclasses import dataclass
 
@@ -7,9 +7,9 @@ from dataclasses import dataclass
 class Post:
     uid: int
     link: str
-    author_id: int
+    author: int
     text: str
-    created: arrow.Arrow
+    created: datetime
     likes: int
     reposts: int
     comments: int
