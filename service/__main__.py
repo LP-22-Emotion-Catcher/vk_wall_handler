@@ -4,7 +4,6 @@ import random  # для рандомизации временного интер
 import time  # для задержки между запросами
 
 from service.config import access_token, owner_id, backend_url  # настройки для запроса
-from datetime import datetime as dt  # для перевода даты из timestamp
 from glom import glom  # для безопасного получения значений словаря
 
 
@@ -25,14 +24,13 @@ def save_post(all_posts):
                 )
         except:
             link = ''
-        try:
-            date = dt.fromtimestamp(int(post['date'])).strftime('%d-%m-%Y %H:%M:%S')
-        except:
-            date = ''
-        
+
+        date = glom(post, 'date', default=None)
+        if date:
+            cute_date = arrow.get(post['date']).to('local').format('DD-MM-YYYY HH:mm:ss')
+
         post_id = glom(post, 'id', default=None)
         author_id = glom(post, 'from_id', default=None)
-        timestamp = glom(post, 'date', default=None)
         likes = glom(post, 'likes.count', default=None)
         reposts = glom(post, 'reposts.count', default=None)
         comments = glom(post, 'comments.count', default=None)
@@ -55,8 +53,7 @@ def save_post(all_posts):
         filtered_post = {
             'post_id': post_id,
             'author_id': author_id,
-            'date': date,
-            'timestamp': timestamp,
+            'date': cute_date,
             'likes': likes,
             'reposts': reposts,
             'comments': comments,
