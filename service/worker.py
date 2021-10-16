@@ -21,7 +21,7 @@ class Worker:
         time_delay = random.randrange(60, 360)
 
         last_post = self.vk.get_posts(owner_id, offset=0)[0]
-        saved_post = self._convert(last_post, owner_id)
+        saved_post = self._convert(last_post)
         self.backend.send_post(saved_post)
 
         while True:
@@ -29,23 +29,21 @@ class Worker:
             new_post = self.vk.get_posts(owner_id, offset=0)[0]
             if new_post.created > last_post.created:
                 last_post = new_post
-                saved_post = self._convert(last_post, owner_id)
+                saved_post = self._convert(last_post)
                 self.backend.send_post(saved_post)
             else:
                 logger.info("There are no new messages")
                 continue
 
-    def _convert(self, post: vkclient.Post, owner_id: int) -> backend.Post:
-        post_id = glom(post, 'id', default=None)
-
+    def _convert(self, post: vkclient.Post) -> backend.Post:
         return backend.Post(
-            uid=int(post_id),
+            uid=post.uid,
             created=post.created,
             author=post.author_id,
-            link=f'https://vk.com/wall{owner_id}_{post_id}',
-            likes=glom(post, 'likes.count', default=0),
-            reposts=glom(post, 'reposts.count', default=0),
-            comments=glom(post, 'comments.count', default=0),
-            views=glom(post, 'views.count', default=0),
-            text=glom(post, 'text', default=None),
+            link=post.link,
+            likes=post.likes,
+            reposts=post.reposts,
+            comments=post.comments,
+            views=post.views,
+            text=post.text,
         )
