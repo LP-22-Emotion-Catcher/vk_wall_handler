@@ -2,8 +2,6 @@ import logging
 import random
 import time
 
-from glom import glom
-
 from service.clients import backend, vkclient
 from service.config import access_token, backend_url, owner_id
 
