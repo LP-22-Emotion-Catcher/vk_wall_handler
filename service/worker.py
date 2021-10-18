@@ -37,6 +37,7 @@ class Worker:
         return backend.Post(
             uid=post.uid,
             created=post.created,
+            wall=post.wall_id,
             author=post.author_id,
             link=post.link,
             likes=post.likes,

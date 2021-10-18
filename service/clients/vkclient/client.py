@@ -35,6 +35,7 @@ class VKClient:
         return Post(
             uid=int(post_id),
             created=arrow.get(post['date']).datetime,
+            wall_id=post['owner_id'],
             author_id=post['from_id'],
             link=f'https://vk.com/wall{owner_id}_{post_id}',
             likes=glom(post, 'likes.count', default=0),
