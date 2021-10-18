@@ -27,7 +27,6 @@ class VKClient:
         response.raise_for_status()
 
         posts = response.json()['response']['items']
-        print(posts)
         return [self._convert(post, owner_id) for post in posts]
 
     def _convert(self, post: dict[str, Any], owner_id: int) -> Post:
