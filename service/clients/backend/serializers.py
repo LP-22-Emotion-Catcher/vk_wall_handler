@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class Post:
     uid: int
     link: str
+    wall: int
     author: int
     text: str
     created: datetime

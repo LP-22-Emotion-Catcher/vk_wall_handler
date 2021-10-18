@@ -27,7 +27,6 @@ class VKClient:
         response.raise_for_status()
 
         posts = response.json()['response']['items']
-        print(posts)
         return [self._convert(post, owner_id) for post in posts]
 
     def _convert(self, post: dict[str, Any], owner_id: int) -> Post:
@@ -35,6 +34,7 @@ class VKClient:
         return Post(
             uid=int(post_id),
             created=arrow.get(post['date']).datetime,
+            wall_id=post['owner_id'],
             author_id=post['from_id'],
             link=f'https://vk.com/wall{owner_id}_{post_id}',
             likes=glom(post, 'likes.count', default=0),
