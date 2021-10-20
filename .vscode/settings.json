@@ -8,4 +8,5 @@
     "editor.rulers": [
         99
     ],
+    "workbench.sideBar.location": "right",
 }
