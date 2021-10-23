@@ -3,7 +3,7 @@ import random
 import time
 
 from service.clients import backend, vkclient
-from service.config import access_token, backend_url, owner_id
+from service.config import access_token, backend_url
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,8 @@ class Worker:
         self.backend = backend.BackClient(backend_url)
 
     def work(self) -> None:
+        wall = self.backend.get_walls()[0]
+        owner_id = wall.wall_id
 
         time_delay = random.randrange(60, 360)
 

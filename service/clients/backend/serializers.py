@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime
 
 from dataclasses import dataclass
@@ -15,3 +16,9 @@ class Post:
     reposts: int
     comments: int
     views: int
+
+
+@dataclass
+class Wall:
+    wall_id: int
+    last_post_id: int
