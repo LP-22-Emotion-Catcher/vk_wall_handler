@@ -1,4 +1,3 @@
-import dataclasses
 from datetime import datetime
 
 from dataclasses import dataclass
