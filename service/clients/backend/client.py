@@ -17,7 +17,7 @@ class BackClient:
     def send_post(self, post: Post) -> None:
         try:
             httpx.post(
-                url=f'{self.url}/api/v1/messages/',
+                url=f'{self.url}/api/v1/messages',
                 content=orjson.dumps(post),
                 headers={'content-type': 'application/json'},
             )
@@ -28,7 +28,7 @@ class BackClient:
     def send_comment(self, post: Comment) -> None:
         try:
             httpx.post(
-                url=f'{self.url}/api/v1/comments/',
+                url=f'{self.url}/api/v1/comments',
                 content=orjson.dumps(post),
                 headers={'content-type': 'application/json'},
             )
