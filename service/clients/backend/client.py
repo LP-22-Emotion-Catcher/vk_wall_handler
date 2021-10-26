@@ -4,7 +4,6 @@ import httpx
 import orjson
 
 from service.clients.backend.serializers import Comment, Post
-from service.config import backend_config
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ class BackClient:
     def send_post(self, post: Post) -> None:
         try:
             httpx.post(
-                url=self.url,
+                url=f'{self.url}/api/v1/messages/',
                 content=orjson.dumps(post),
                 headers={'content-type': 'application/json'},
             )
@@ -29,7 +28,7 @@ class BackClient:
     def send_comment(self, post: Comment) -> None:
         try:
             httpx.post(
-                url=self.url,
+                url=f'{self.url}/api/v1/comments/',
                 content=orjson.dumps(post),
                 headers={'content-type': 'application/json'},
             )
@@ -39,7 +38,7 @@ class BackClient:
 
     def get_walls(self):
         try:
-            response = httpx.get(backend_config)
+            response = httpx.get(f'{self.url}/api/v1/walls/')
             walls = response.json()
             logger.debug('walls config has been recieved')
         except httpx.ConnectError:
