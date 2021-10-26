@@ -3,7 +3,7 @@ import random
 import time
 
 from service.clients import backend, vkclient
-from service.config import access_token, backend_url, owner_id
+from service.config import access_token, backend_url
 
 logger = logging.getLogger(__name__)
 
@@ -15,25 +15,26 @@ class Worker:
         self.backend = backend.BackClient(backend_url)
 
     def work(self) -> None:
+        wall = self.backend.get_walls()[0]
+        owner_id = wall['wall_id']
+        last_post_id = wall['last_post_id']
 
         time_delay = random.randrange(60, 360)
-
-        last_post = self.vk.get_posts(owner_id, offset=0)[0]
-        saved_post = self._convert(last_post)
-        self.backend.send_post(saved_post)
 
         while True:
             time.sleep(time_delay)
             new_post = self.vk.get_posts(owner_id, offset=0)[0]
-            if new_post.created > last_post.created:
-                last_post = new_post
-                saved_post = self._convert(last_post)
+            if new_post.uid > last_post_id:
+                saved_post = self._convert_post(new_post)
                 self.backend.send_post(saved_post)
             else:
                 logger.info("There are no new messages")
                 continue
+            comment = self.vk.get_comments(owner_id, post_id=new_post.uid, offset=0)[0]
+            saved_comment = self._convert_comment(comment)
+            self.backend.send_comment(saved_comment)
 
-    def _convert(self, post: vkclient.Post) -> backend.Post:
+    def _convert_post(self, post: vkclient.Post) -> backend.Post:
         return backend.Post(
             uid=post.uid,
             created=post.created,
@@ -45,4 +46,14 @@ class Worker:
             comments=post.comments,
             views=post.views,
             text=post.text,
+        )
+
+    def _convert_comment(self, comment: vkclient.Comment) -> backend.Comment:
+        return backend.Comment(
+            uid=comment.uid,
+            post_id=comment.post_id,
+            wall_id=comment.wall_id,
+            author_id=comment.author_id,
+            text=comment.text,
+            date_of_publishing=comment.created,
         )
