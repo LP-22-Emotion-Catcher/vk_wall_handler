@@ -3,7 +3,7 @@ import random
 import time
 
 from service.clients import backend, vkclient
-from service.config import access_token, backend_url
+from service.config import access_token, backend_url, time_delay
 
 logger = logging.getLogger(__name__)
 
@@ -13,26 +13,23 @@ class Worker:
     def __init__(self) -> None:
         self.vk = vkclient.VKClient(access_token, chunk=1)
         self.backend = backend.BackClient(backend_url)
+        self.delay = int(time_delay)
 
     def work(self) -> None:
-        wall = self.backend.get_walls()[0]
-        owner_id = wall['wall_id']
-        last_post_id = wall['last_post_id']
-
-        time_delay = random.randrange(60, 360)
-
         while True:
-            time.sleep(time_delay)
-            new_post = self.vk.get_posts(owner_id, offset=0)[0]
-            if new_post.uid > last_post_id:
+            walls = self.backend.get_walls()
+            for wall in walls:
+                owner_id = wall['wall_id']
+                last_post_id = wall['last_post_id']
+                new_post = self.vk.get_posts(owner_id, offset=0)[0]
+                if new_post.uid <= last_post_id:
+                    logger.info("There are no new messages on wall {owner_id}")
+                    continue
                 saved_post = self._convert_post(new_post)
                 self.backend.send_post(saved_post)
-            else:
-                logger.info("There are no new messages")
-                continue
-            comment = self.vk.get_comments(owner_id, post_id=new_post.uid, offset=0)[0]
-            saved_comment = self._convert_comment(comment)
-            self.backend.send_comment(saved_comment)
+                time.sleep(random.randrange(3, 10))
+            logger.info('I am waiting in 5 minutes to make a new query ')
+            time.sleep(self.delay)
 
     def _convert_post(self, post: vkclient.Post) -> backend.Post:
         return backend.Post(
