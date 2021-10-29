@@ -22,8 +22,8 @@ class BackClient:
                 headers={'content-type': 'application/json'},
             )
             logger.debug('new message has been sent to backend')
-        except httpx.ConnectError:
-            logger.debug('can\'t send message due to connection problem')
+        except (httpx.ConnectError, httpx.RemoteProtocolError):
+            logger.debug('Can\'t send message due to connection problem')
 
     def send_comment(self, post: Comment) -> None:
         try:
@@ -32,16 +32,16 @@ class BackClient:
                 content=orjson.dumps(post),
                 headers={'content-type': 'application/json'},
             )
-            logger.debug('new comment has been sent to backend')
-        except httpx.ConnectError:
-            logger.debug('can\'t send comment due to connection problem')
+            logger.debug('New comment has been sent to backend')
+        except (httpx.ConnectError, httpx.RemoteProtocolError):
+            logger.debug('Can\'t send comment due to connection problem')
 
     def get_walls(self):
         try:
             response = httpx.get(f'{self.url}/api/v1/walls/')
             walls = response.json()
-            logger.debug('walls config has been recieved')
-        except httpx.ConnectError:
-            logger.debug('can\'t recieve walls config due to connection problem')
-
+            logger.debug('Walls config has been recieved')
+        except (httpx.ConnectError, httpx.RemoteProtocolError):
+            logger.debug('Can\'t recieve walls config due to connection problem')
+            return None
         return walls
