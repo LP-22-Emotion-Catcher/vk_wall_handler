@@ -23,3 +23,8 @@ class Comment(BaseModel):
     author_id: int
     text: str
     created: datetime
+
+
+class Wall(BaseModel):
+    uid: int
+    last_post_id: int

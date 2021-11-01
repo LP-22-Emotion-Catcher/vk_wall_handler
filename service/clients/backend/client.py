@@ -3,7 +3,7 @@ import logging
 import httpx
 import orjson
 
-from service.clients.backend.serializers import Comment, Post
+from service.clients.backend.serializers import Comment, Post, Wall
 
 
 logger = logging.getLogger(__name__)
@@ -45,3 +45,11 @@ class BackClient:
             logger.debug('Can\'t recieve walls config due to connection problem')
             return None
         return walls
+
+    def delete_wall(self, wall: Wall) -> None:
+        try:
+            httpx.delete(url=f'{self.url}/api/v1/wall/{wall.wall_id}')
+            logger.debug('Wall has been sent for deletion')
+        except (httpx.ConnectError, httpx.RemoteProtocolError, KeyError):
+            logger.debug('Can\'t send wall due to connection problem')
+            raise KeyError

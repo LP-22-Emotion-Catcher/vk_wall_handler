@@ -2,8 +2,12 @@ from typing import Any
 from glom import glom
 import arrow
 import httpx
+import logging
 
 from service.clients.vkclient.serializers import Post, Comment
+from service.exceptions import UnknownWallError
+
+logger = logging.getLogger(__name__)
 
 
 class VKClient:
@@ -25,9 +29,14 @@ class VKClient:
         }
 
         response = httpx.get(self.posts_url, params=data)
-        response.raise_for_status()
+        data = response.json()
+        try:
+            posts = response.json()['response']['items']
+        except KeyError:
+            logger.exception('Ага попался! %s', data)
+            response.raise_for_status()
+            raise UnknownWallError
 
-        posts = response.json()['response']['items']
         return [self._convert_posts(post, owner_id) for post in posts]
 
     def _convert_posts(self, post: dict[str, Any], owner_id: int) -> Post:
@@ -57,9 +66,14 @@ class VKClient:
         }
 
         response = httpx.get(self.comments_url, params=data)
-        response.raise_for_status()
+        # response.raise_for_status()
+        data = response.json()
+        try:
+            comments = response.json()['response']['items']
+        except KeyError:
+            logger.exception('Ага попался! %s', data)
+            response.raise_for_status()
 
-        comments = response.json()['response']['items']
         return [self._convert_comments(comment, owner_id) for comment in comments]
 
     def _convert_comments(self, comment: dict[str, Any], owner_id: int) -> Comment:
