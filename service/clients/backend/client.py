@@ -52,4 +52,3 @@ class BackClient:
             logger.debug('Wall has been sent for deletion')
         except (httpx.ConnectError, httpx.RemoteProtocolError, KeyError):
             logger.debug('Can\'t send wall due to connection problem')
-            raise KeyError
