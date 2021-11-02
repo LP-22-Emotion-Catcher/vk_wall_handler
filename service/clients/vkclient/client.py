@@ -65,14 +65,13 @@ class VKClient:
         }
 
         response = httpx.get(self.comments_url, params=data)
-        # response.raise_for_status()
+        response.raise_for_status()
         data = response.json()
-        try:
-            comments = response.json()['response']['items']
-        except KeyError:
+        if 'response' not in data:
             logger.exception('Ага попался! %s', data)
-            response.raise_for_status()
+            raise UnknownWallError(str(owner_id))
 
+        comments = response.json()['response']['items']
         return [self._convert_comments(comment, owner_id) for comment in comments]
 
     def _convert_comments(self, comment: dict[str, Any], owner_id: int) -> Comment:
