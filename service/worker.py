@@ -28,14 +28,11 @@ class Worker:
             for wall in walls:
                 owner_id = wall['wall_id']
                 last_post_id = wall['last_post_id']
-                wall_link = wall['link']
                 try:
-                    self.vk.get_posts(owner_id, offset=0)[0]
-                except (KeyError, TypeError):
-                    self.backend.delete_wall(wall)
-                    raise UnknownWallError(wall_link)
+                    new_post = self.vk.get_posts(owner_id, offset=0)[0]
+                except UnknownWallError:
+                    self.backend.delete_wall(wall['uid'])
 
-                new_post = self.vk.get_posts(owner_id, offset=0)[0]
                 if new_post.uid <= last_post_id:
                     logger.debug(f"There are no new messages on wall {owner_id}")
                     continue
@@ -67,10 +64,4 @@ class Worker:
             author_id=comment.author_id,
             text=comment.text,
             date_of_publishing=comment.created,
-        )
-
-    def _convert_wall(self, wall: backend.Wall) -> vkclient.Wall:
-        return vkclient.Wall(
-            uid: wall.wall_id
-            last_post_id: wall.last_post_id
         )

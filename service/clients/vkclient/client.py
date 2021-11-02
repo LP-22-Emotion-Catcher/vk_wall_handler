@@ -30,13 +30,12 @@ class VKClient:
 
         response = httpx.get(self.posts_url, params=data)
         data = response.json()
-        try:
-            posts = response.json()['response']['items']
-        except KeyError:
+        response.raise_for_status()
+        if 'response' not in data:
             logger.exception('Ага попался! %s', data)
-            response.raise_for_status()
-            raise UnknownWallError
+            raise UnknownWallError(str(owner_id))
 
+        posts = response.json()['response']['items']
         return [self._convert_posts(post, owner_id) for post in posts]
 
     def _convert_posts(self, post: dict[str, Any], owner_id: int) -> Post:
