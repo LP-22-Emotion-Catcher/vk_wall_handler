@@ -45,3 +45,10 @@ class BackClient:
             logger.debug('Can\'t recieve walls config due to connection problem')
             return None
         return walls
+
+    def delete_wall(self, wall_id) -> None:
+        try:
+            httpx.delete(url=f'{self.url}/api/v1/walls/{wall_id}')
+            logger.debug('Wall has been sent for deletion')
+        except (httpx.ConnectError, httpx.RemoteProtocolError, KeyError):
+            logger.debug('Can\'t send wall due to connection problem')

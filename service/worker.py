@@ -4,6 +4,7 @@ import time
 
 from service.clients import backend, vkclient
 from service.config import access_token, backend_url, time_delay
+from service.exceptions import UnknownWallError
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,11 @@ class Worker:
             for wall in walls:
                 owner_id = wall['wall_id']
                 last_post_id = wall['last_post_id']
-                new_post = self.vk.get_posts(owner_id, offset=0)[0]
+                try:
+                    new_post = self.vk.get_posts(owner_id, offset=0)[0]
+                except UnknownWallError:
+                    self.backend.delete_wall(wall['uid'])
+
                 if new_post.uid <= last_post_id:
                     logger.debug(f"There are no new messages on wall {owner_id}")
                     continue
